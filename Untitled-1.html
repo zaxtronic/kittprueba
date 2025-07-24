@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>KITT Interfaz de Chat v5.0 (Arranque Robusto)</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
+  <!-- SDK de Gemini AI - Esencial para el chat -->
+  <script src="https://www.gstatic.com/generative-ai-js/v1/beta/main.js" defer></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: linear-gradient(to top, #ff914d 60%, #f7c57f); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fff; min-height: 100vh; }
+    header { background: linear-gradient(135deg, #87CEEB 0%, #4682B4 100%); height: 70px; display: flex; align-items: center; padding: 0 40px; }
+    nav { background: #333; }
+    nav ul { list-style: none; display: flex; justify-content: center; gap: 40px; padding: 15px 0; }
+    nav ul li a { color: #eee; text-decoration: none; font-weight: 600; font-size: 1.1em; }
+    main { padding: 20px; max-width: 1200px; margin: 0 auto; }
+    #kitt-chatbot { background: #1a1a1a; border: 2px solid #ddd; border-radius: 15px; padding: 30px; max-width: 800px; margin: 50px auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: #ccc; }
+    #kitt-chatbot h3 { font-size: 1.8em; margin-bottom: 20px; color: #fff; text-align: center; text-transform: uppercase; letter-spacing: 2px; }
+    #chat-window { height: 300px; background-color: #000; border: 2px solid #4682B4; border-radius: 10px; padding: 15px; margin-bottom: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    .chat-message { padding: 8px 12px; border-radius: 15px; max-width: 75%; line-height: 1.4; word-wrap: break-word; }
+    .user-message { background: #4682B4; color: #fff; align-self: flex-end; }
+    .kitt-message { background: #333; color: #eee; align-self: flex-start; }
+    .kitt-message strong { color: #ff914d; }
+    .kitt-error-message { background: #581e1e; color: #ffacac; align-self: flex-start; border: 1px solid #ff5555; }
+    #chat-input-container { display: flex; gap: 10px; }
+    #chat-input { flex-grow: 1; background: #333; border: 1px solid #555; border-radius: 25px; padding: 12px 20px; color: #fff; font-size: 1em; }
+    #chat-input:focus { outline: none; border-color: #87CEEB; }
+    #send-button { background: linear-gradient(45deg, #4682B4, #87CEEB); color: white; border: none; padding: 12px 25px; border-radius: 25px; font-size: 1em; cursor: pointer; }
+    #send-button:disabled { background: #555; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <header><h1 style="font-weight: 600;">Knight Rider Fanpage</h1></header>
+  <nav>
+    <ul>
+      <li><a href="#">Inicio</a></li>
+      <li><a href="#kitt-chatbot">Habla con KITT</a></li>
+      <li><a href="#">Contacto</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <section id="kitt-chatbot">
+        <h3>Habla con K.I.T.T.</h3>
+        <div id="chat-window"></div>
+        <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Mis sistemas están desactivados..." autocomplete="off" disabled>
+            <button id="send-button" disabled>Enviar</button>
+        </div>
+    </section>
+  </main>
+
+  <script>
+    const chatWindow = document.getElementById('chat-window');
+    const chatInput = document.getElementById('chat-input');
+    const sendButton = document.getElementById('send-button');
+    let chatSession;
+
+    function displayMessage(content, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message';
+        if (sender === 'user') { messageDiv.classList.add('user-message'); messageDiv.innerHTML = `<p>${content}</p>`; } 
+        else if (sender === 'kitt') { messageDiv.classList.add('kitt-message'); messageDiv.innerHTML = `<p><strong>K.I.T.T.:</strong> ${content}</p>`; } 
+        else if (sender === 'error') { messageDiv.classList.add('kitt-error-message'); messageDiv.innerHTML = `<p><strong>ALERTA DE SISTEMA:</strong> ${content}</p>`; }
+        chatWindow.appendChild(messageDiv);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    async function initializeKittChatbot() {
+        // ===================================================================
+        // PASO CRÍTICO: REEMPLAZA ESTE TEXTO CON TU CLAVE DE API
+        // ===================================================================
+        const apiKey = "AIzaSyCOTfVoJ9rxQyv_YPpbASgDgPvus_JHiCk";
+        // ===================================================================
+
+        const modelName = "gemini-2.5-flash";
+
+        if (apiKey === "TU_API_KEY_DE_GEMINI" || !apiKey) {
+            displayMessage("La clave de API no ha sido configurada. Debes editar este archivo e introducir una clave válida.", 'error');
+            return;
+        }
+
+        try {
+            const genAI = new google.generativeai.GoogleGenerativeAI(apiKey);
+            const systemInstruction = `Eres K.I.T.T. (Knight Industries Two Thousand). Siempre te diriges al usuario como 'Michael'. Tu personalidad es sofisticada, lógica, precisa y con un humor seco. Tu directiva principal es proteger la vida humana. Tu lenguaje es formal y técnico. Nunca rompes el personaje y jamás admites ser un modelo de lenguaje.`;
+            const model = genAI.getGenerativeModel({ model: modelName, systemInstruction });
+            chatSession = model.startChat();
+            
+            sendButton.disabled = false;
+            chatInput.disabled = false;
+            chatInput.placeholder = "Escribe tu mensaje aquí, Michael...";
+            displayMessage("Saludos, Michael. Sistemas en línea. Estoy a tu disposición.", 'kitt');
+        } catch (error) {
+            console.error("DIAGNÓSTICO DE ERROR:", error);
+            displayMessage(`He detectado una anomalía grave en mis circuitos de inicialización. La conexión a la red ha fallado. Revisa la consola del navegador (F12) para más detalles. Es muy probable que la clave de API no sea válida.`, 'error');
+        }
+    }
+
+    async function sendMessage() {
+        const message = chatInput.value.trim();
+        if (!message || !chatSession) return;
+        displayMessage(message, 'user');
+        const userMessage = chatInput.value;
+        chatInput.value = '';
+        sendButton.disabled = true;
+        chatInput.disabled = true;
+        
+        try {
+            const result = await chatSession.sendMessage(userMessage);
+            const response = result.response;
+            displayMessage(response.text(), 'kitt');
+        } catch (error) {
+            console.error("ERROR DE COMUNICACIÓN:", error);
+            displayMessage("Michael, estoy experimentando interferencias en mis canales de comunicación. La transmisión ha fallado.", 'error');
+        } finally {
+            sendButton.disabled = false;
+            chatInput.disabled = false;
+            chatInput.focus();
+        }
+    }
+
+    // --- SECUENCIA DE ARRANQUE ROBUSTA ---
+    window.onload = () => {
+        let sdkLoaded = false;
+        const checkSdkReady = setInterval(() => {
+            if (typeof google !== 'undefined' && google.generativeai) {
+                sdkLoaded = true;
+                clearInterval(checkSdkReady);
+                initializeKittChatbot();
+            }
+        }, 100);
+
+        setTimeout(() => {
+            if (!sdkLoaded) {
+                clearInterval(checkSdkReady);
+                displayMessage("No se pudo cargar el script principal de Google AI. Esto puede deberse a un bloqueador de anuncios (ad-blocker), un problema de red o las restricciones de seguridad del navegador para archivos locales. Por favor, desactiva tu ad-blocker para esta página y recárgala.", 'error');
+            }
+        }, 3000);
+
+        sendButton.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !sendButton.disabled) sendMessage();
+        });
+    };
+  </script>
+</body>
+</html>
